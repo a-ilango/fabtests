@@ -376,7 +376,11 @@ static int server_connect(void)
 
 	rd = fi_eq_sread(cmeq, &event, &entry, sizeof entry, -1, 0);
 	if (rd != sizeof entry) {
-		FT_PRINTERR("fi_eq_sread", rd);
+		if (rd == -FI_EAVAIL) {
+			eq_readerr(cmeq, "fi_eq_sread listen");
+		} else {
+			FT_PRINTERR("fi_eq_sread", rd);
+		}
 		return (int) rd;
 	}
 
@@ -409,7 +413,12 @@ static int server_connect(void)
 
 	rd = fi_eq_sread(cmeq, &event, &entry, sizeof entry, -1, 0);
 	if (rd != sizeof entry) {
-		FT_PRINTERR("fi_eq_sread", rd);
+		if (rd == -FI_EAVAIL) {
+			eq_readerr(cmeq, "fi_eq_sread accept");
+		} else {
+			FT_PRINTERR("fi_eq_sread", rd);
+		}
+		ret = (int) rd;
 		goto err3;
 	}
 
@@ -436,7 +445,6 @@ err1:
 static int client_connect(void)
 {
 	struct fi_eq_cm_entry entry;
-	struct fi_eq_err_entry err;
 	uint32_t event;
 	struct fi_info *fi;
 	ssize_t rd;
@@ -487,13 +495,7 @@ static int client_connect(void)
 	rd = fi_eq_sread(cmeq, &event, &entry, sizeof entry, -1, 0);
 	if (rd != sizeof entry) {
 		if (rd == -FI_EAVAIL) {
-			rd = fi_eq_readerr(cmeq, &err, 0);
-			if (rd != sizeof(err)) {
-				FT_PRINTERR("fi_eq_sread", rd);
-			} else {
-				fprintf(stderr, "EQ report error %d %s\n", err.err,
-						fi_strerror(err.err));
-			}
+			eq_readerr(cmeq, "fi_eq_sread connect");
 		} else {
 			FT_PRINTERR("fi_eq_sread", rd);
 		}

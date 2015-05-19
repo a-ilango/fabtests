@@ -354,18 +354,19 @@ static int connect_events(void)
 	struct fi_eq_cm_entry entry;
 	uint32_t event;
 	int ret = 0;
+	ssize_t rd = 0;
 
 	while (connects_left && !ret) {
-		ret = fi_eq_sread(eq, &event, &entry, sizeof entry, -1, 0);
-		
-		if (ret < 0) {
-			FT_PRINTERR("fi_eq_sread", ret);
-			break;
-		}
-
-		if (ret != sizeof entry) {
+		rd = fi_eq_sread(eq, &event, &entry, sizeof entry, -1, 0);
+		if (rd != sizeof entry) {
 			printf("unexpected event during connect\n");
-			ret = -FI_EIO;
+			if (rd == -FI_EAVAIL) {
+				eq_readerr(eq, "fi_eq_sread");
+				ret = -FI_EIO;
+			} else {
+				FT_PRINTERR("fi_eq_sread", rd);
+				ret = (int) rd;
+			}
 			break;
 		}
 
@@ -380,17 +381,19 @@ static int shutdown_events(void)
 	struct fi_eq_cm_entry entry;
 	uint32_t event;
 	int ret = 0;
+	ssize_t rd = 0;
 
 	while (disconnects_left && !ret) {
 		ret = fi_eq_sread(eq, &event, &entry, sizeof entry, -1, 0);
-		if (ret < 0) {
-			FT_PRINTERR("fi_eq_sread", ret);
-			break;
-		}
-
-		if (ret != sizeof entry) {
+		if (rd != sizeof entry) {
 			printf("unexpected event during shutdown\n");
-			ret = -FI_EIO;
+			if (rd == -FI_EAVAIL) {
+				eq_readerr(eq, "fi_eq_sread");
+				ret = -FI_EIO;
+			} else {
+				FT_PRINTERR("fi_eq_sread", rd);
+				ret = (int) rd;
+			}
 			break;
 		}
 

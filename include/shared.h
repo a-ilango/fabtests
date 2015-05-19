@@ -122,6 +122,7 @@ int ft_finalize(struct fid_ep *tx_ep, struct fid_cq *scq, struct fid_cq *rcq,
 int wait_for_data_completion(struct fid_cq *cq, int num_completions);
 int wait_for_completion(struct fid_cq *cq, int num_completions);
 void cq_readerr(struct fid_cq *cq, char *cq_str);
+void eq_readerr(struct fid_eq *eq, char *eq_str);
 
 int64_t get_elapsed(const struct timespec *b, const struct timespec *a, 
 		enum precision p);
