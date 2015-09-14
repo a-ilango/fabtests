@@ -1,0 +1,27 @@
+{
+	"prov_name": "psm",
+	"test_type": [
+		"FT_TEST_LATENCY",
+	],
+	"class_function": [
+		"FT_FUNC_SEND",
+		"FT_FUNC_SENDV",
+		"FT_FUNC_SENDMSG",
+	],
+	"ep_type": [
+		"FI_EP_RDM",
+	],
+	"av_type": [
+		"FI_AV_TABLE",
+	],
+	"comp_type": [
+		"FT_COMP_QUEUE"
+	],
+	"mode": [
+		"FT_MODE_ALL"
+	],
+	"caps": [
+		"FT_CAP_MSG",
+	],
+	"test_flags": "FT_FLAG_QUICKTEST"
+},

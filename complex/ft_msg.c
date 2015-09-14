@@ -30,6 +30,7 @@
 #include <string.h>
 #include <time.h>
 
+#include <shared.h>
 #include "fabtest.h"
 
 
@@ -43,7 +44,7 @@ static int ft_post_recv(void)
 		ft_format_iov(ft_rx.iov, ft.iov_array[ft_rx.iov_iter],
 				ft_rx.buf, ft_rx.msg_size);
 		ret = fi_recvv(ft_rx.ep, ft_rx.iov, ft_rx.iov_desc,
-				ft.iov_array[ft_rx.iov_iter], ft_rx.addr, NULL);
+				ft.iov_array[ft_rx.iov_iter], ft_rx.addr, &rx_ctx);
 		ft_next_iov_cnt(&ft_rx, fabric_info->rx_attr->iov_limit);
 		break;
 	case FT_FUNC_SENDMSG:
@@ -53,14 +54,14 @@ static int ft_post_recv(void)
 		msg.desc = ft_rx.iov_desc;
 		msg.iov_count = ft.iov_array[ft_rx.iov_iter];
 		msg.addr = ft_rx.addr;
-		msg.context = NULL;
+		msg.context = &rx_ctx;
 		msg.data = 0;
 		ret = fi_recvmsg(ft_rx.ep, &msg, 0);
 		ft_next_iov_cnt(&ft_rx, fabric_info->rx_attr->iov_limit);
 		break;
 	default:
 		ret = fi_recv(ft_rx.ep, ft_rx.buf, ft_rx.msg_size,
-				ft_rx.memdesc, ft_rx.addr, NULL);
+				ft_rx.memdesc, ft_rx.addr, &rx_ctx);
 		break;
 	}
 
@@ -78,7 +79,7 @@ static int ft_post_trecv(void)
 				ft_rx.buf, ft_rx.msg_size);
 		ret = fi_trecvv(ft_rx.ep, ft_rx.iov, ft_rx.iov_desc,
 				ft.iov_array[ft_rx.iov_iter], ft_rx.addr,
-				ft_rx.tag, 0, NULL);
+				ft_rx.tag, 0, &rx_ctx);
 		ft_next_iov_cnt(&ft_rx, fabric_info->rx_attr->iov_limit);
 		break;
 	case FT_FUNC_SENDMSG:
@@ -90,13 +91,13 @@ static int ft_post_trecv(void)
 		msg.addr = ft_rx.addr;
 		msg.tag = ft_rx.tag;
 		msg.ignore = 0;
-		msg.context = NULL;
+		msg.context = &rx_ctx;
 		ret = fi_trecvmsg(ft_rx.ep, &msg, 0);
 		ft_next_iov_cnt(&ft_rx, fabric_info->rx_attr->iov_limit);
 		break;
 	default:
 		ret = fi_trecv(ft_rx.ep, ft_rx.buf, ft_rx.msg_size,
-				ft_rx.memdesc, ft_rx.addr, ft_rx.tag, 0, NULL);
+				ft_rx.memdesc, ft_rx.addr, ft_rx.tag, 0, &rx_ctx);
 		break;
 	}
 	return ret;
@@ -112,7 +113,7 @@ static int ft_post_send(void)
 		ft_format_iov(ft_tx.iov, ft.iov_array[ft_tx.iov_iter],
 				ft_tx.buf, ft_tx.msg_size);
 		ret = fi_sendv(ft_tx.ep, ft_tx.iov, ft_tx.iov_desc,
-				ft.iov_array[ft_tx.iov_iter], ft_tx.addr, NULL);
+				ft.iov_array[ft_tx.iov_iter], ft_tx.addr, &tx_ctx);
 		ft_next_iov_cnt(&ft_tx, fabric_info->tx_attr->iov_limit);
 		break;
 	case FT_FUNC_SENDMSG:
@@ -122,14 +123,14 @@ static int ft_post_send(void)
 		msg.desc = ft_tx.iov_desc;
 		msg.iov_count = ft.iov_array[ft_tx.iov_iter];
 		msg.addr = ft_tx.addr;
-		msg.context = NULL;
+		msg.context = &tx_ctx;
 		msg.data = 0;
 		ret = fi_sendmsg(ft_tx.ep, &msg, 0);
 		ft_next_iov_cnt(&ft_tx, fabric_info->tx_attr->iov_limit);
 		break;
 	default:
 		ret = fi_send(ft_tx.ep, ft_tx.buf, ft_tx.msg_size,
-				ft_tx.memdesc, ft_tx.addr, NULL);
+				ft_tx.memdesc, ft_tx.addr, &tx_ctx);
 		break;
 	}
 
@@ -147,7 +148,7 @@ static int ft_post_tsend(void)
 				ft_tx.buf, ft_tx.msg_size);
 		ret = fi_tsendv(ft_tx.ep, ft_tx.iov, ft_tx.iov_desc,
 				ft.iov_array[ft_tx.iov_iter], ft_tx.addr,
-				ft_tx.tag, NULL);
+				ft_tx.tag, &tx_ctx);
 		ft_next_iov_cnt(&ft_tx, fabric_info->tx_attr->iov_limit);
 		break;
 	case FT_FUNC_SENDMSG:
@@ -158,14 +159,14 @@ static int ft_post_tsend(void)
 		msg.iov_count = ft.iov_array[ft_tx.iov_iter];
 		msg.addr = ft_tx.addr;
 		msg.tag = ft_tx.tag;
-		msg.context = NULL;
+		msg.context = &tx_ctx;
 		msg.data = 0;
 		ret = fi_tsendmsg(ft_tx.ep, &msg, 0);
 		ft_next_iov_cnt(&ft_tx, fabric_info->tx_attr->iov_limit);
 		break;
 	default:
 		ret = fi_tsend(ft_tx.ep, ft_tx.buf, ft_tx.msg_size,
-				ft_tx.memdesc, ft_tx.addr, ft_tx.tag, NULL);
+				ft_tx.memdesc, ft_tx.addr, ft_tx.tag, &tx_ctx);
 		break;
 	}
 	return ret;
