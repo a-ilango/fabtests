@@ -148,7 +148,7 @@ void ft_next_iov_cnt(struct ft_xcontrol *ctrl, size_t max_iov_cnt)
 		ctrl->iov_iter = 0;
 }
 
-static int ft_sync(int value)
+int ft_sync(int value)
 {
 	int result = -FI_EOTHER;
 
@@ -400,6 +400,9 @@ int ft_run_test()
 	ret = ft_open_control();
 	if (ret)
 		goto cleanup;
+
+	if (listen_sock >= 0)
+		ft_sync(0);
 
 	if (test_info.ep_type == FI_EP_MSG && listen_sock >= 0)
 		ret = ft_open_passive();

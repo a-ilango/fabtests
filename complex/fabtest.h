@@ -203,6 +203,7 @@ struct ft_msg {
 	uint8_t		data[124];
 };
 
+int ft_sync(int value);
 int ft_fw_send(int fd, void *msg, size_t len);
 int ft_fw_recv(int fd, void *msg, size_t len);
 

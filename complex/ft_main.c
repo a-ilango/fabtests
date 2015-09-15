@@ -373,10 +373,6 @@ static int ft_fw_process_list(struct fi_info *hints, struct fi_info *info)
 			return ret;
 
 		ft_fw_update_info(&test_info, fabric_info, subindex);
-		ret = ft_fw_send(sock, &test_info, sizeof test_info);
-		if (ret)
-			return ret;
-
 		result = ft_run_test();
 
 		ret = ft_fw_recv(sock, &sresult, sizeof sresult);
@@ -406,6 +402,12 @@ static int ft_fw_client(void)
 
 		fts_cur_info(series, &test_info);
 		ft_fw_convert_info(hints, &test_info);
+
+		ret = ft_fw_send(sock, &test_info, sizeof test_info);
+		if (ret)
+			return ret;
+
+		ft_sync(0);
 
 		printf("Starting test %d / %d\n", test_info.test_index, series->test_count);
 		ret = fi_getinfo(FT_FIVERSION, ft_strptr(test_info.node),
