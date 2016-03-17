@@ -794,17 +794,19 @@ ssize_t ft_post_tx_args(struct fid_ep *ep, void *buf, size_t size, struct fid_mr
 {
 	ssize_t ret;
 
-	if (hints->caps & FI_TAGGED) {
-		ret = fi_tsend(ep, buf, size + ft_tx_prefix_size(),
-				fi_mr_desc(mr), dest_addr, tx_seq, context);
-	} else {
-		ret = fi_send(ep, buf, size + ft_tx_prefix_size(),
-				fi_mr_desc(mr), dest_addr, context);
-	}
-	if (ret) {
-		FT_PRINTERR("transmit", ret);
-		return ret;
-	}
+	do {
+		if (hints->caps & FI_TAGGED) {
+			ret = fi_tsend(ep, buf, size + ft_tx_prefix_size(),
+					fi_mr_desc(mr), dest_addr, tx_seq, context);
+		} else {
+			ret = fi_send(ep, buf, size + ft_tx_prefix_size(),
+					fi_mr_desc(mr), dest_addr, context);
+		}
+		if (ret) {
+			FT_PRINTERR("transmit", ret);
+			return ret;
+		}
+	} while (ret == -FI_EAGAIN);
 
 	tx_seq++;
 	return 0;
@@ -876,17 +878,19 @@ ssize_t ft_post_rx_args(struct fid_ep *ep, void *buf, size_t size, struct fid_mr
 {
 	ssize_t ret;
 
-	if (hints->caps & FI_TAGGED) {
-		ret = fi_trecv(ep, buf, size + ft_rx_prefix_size(), fi_mr_desc(mr),
-				src_addr, rx_seq, 0, context);
-	} else {
-		ret = fi_recv(ep, buf, size + ft_rx_prefix_size(), fi_mr_desc(mr),
-				src_addr, context);
-	}
-	if (ret) {
-		FT_PRINTERR("receive", ret);
-		return ret;
-	}
+	do {
+		if (hints->caps & FI_TAGGED) {
+			ret = fi_trecv(ep, buf, size + ft_rx_prefix_size(), fi_mr_desc(mr),
+					src_addr, rx_seq, 0, context);
+		} else {
+			ret = fi_recv(ep, buf, size + ft_rx_prefix_size(), fi_mr_desc(mr),
+					src_addr, context);
+		}
+		if (ret) {
+			FT_PRINTERR("receive", ret);
+			return ret;
+		}
+	} while (ret == -FI_EAGAIN);
 
 	rx_seq++;
 	return 0;

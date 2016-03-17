@@ -100,12 +100,14 @@ static int pp_post_recv(struct pingpong_context *ctx, int n)
 
 
 	for (i = 0; i < n; ++i) {
-		rc = fi_recv(ctx->ep, ctx->buf, ctx->size, fi_mr_desc(ctx->mr),
-			     0, (void *)(uintptr_t)PINGPONG_RECV_WCID);
-		if (rc) {
-			FT_PRINTERR("fi_recv", rc);
-			break;
-		}
+		do {
+			rc = fi_recv(ctx->ep, ctx->buf, ctx->size, fi_mr_desc(ctx->mr),
+				     0, (void *)(uintptr_t)PINGPONG_RECV_WCID);
+			if (rc && rc != -FI_EAGAIN) {
+				FT_PRINTERR("fi_recv", rc);
+				break;
+			}
+		} while (rc == -FI_EAGAIN);
 	}
 
 	return i;
@@ -415,12 +417,14 @@ static int pp_post_send(struct pingpong_context *ctx)
 {
 	int rc = 0;
 
-	rc = fi_send(ctx->ep, ctx->buf, ctx->size, fi_mr_desc(ctx->mr), 
-		     0, (void *)(uintptr_t)PINGPONG_SEND_WCID);
-	if (rc) {
-		FT_PRINTERR("fi_send", rc);
-		return 1;
-	}
+	do {
+		rc = fi_send(ctx->ep, ctx->buf, ctx->size, fi_mr_desc(ctx->mr), 
+			     0, (void *)(uintptr_t)PINGPONG_SEND_WCID);
+		if (rc && rc != -FI_EAGAIN) {
+			FT_PRINTERR("fi_send", rc);
+			return 1;
+		}
+	} while (rc == -FI_EAGAIN);
 
 	return 0;
 }

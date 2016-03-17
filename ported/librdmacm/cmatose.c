@@ -77,12 +77,14 @@ static int post_recvs(struct cma_node *node)
 	int i, ret = 0;
 
 	for (i = 0; i < hints->tx_attr->size && !ret; i++ ) {
-		ret = fi_recv(node->ep, node->mem, hints->ep_attr->max_msg_size,
-				node->mrdesc, 0, node);
-		if (ret) {
-			FT_PRINTERR("fi_recv", ret);
-			break;
-		}
+		do {
+			ret = fi_recv(node->ep, node->mem, hints->ep_attr->max_msg_size,
+					node->mrdesc, 0, node);
+			if (ret && ret != -FI_EAGAIN) {
+				FT_PRINTERR("fi_recv", ret);
+				break;
+			}
+		} while (ret == -FI_EAGAIN);
 	}
 	return ret;
 }
@@ -194,12 +196,14 @@ static int post_sends(struct cma_node *node)
 		return 0;
 
 	for (i = 0; i < hints->tx_attr->size && !ret; i++) {
-		ret = fi_send(node->ep, node->mem, hints->ep_attr->max_msg_size,
-				node->mrdesc, 0, node);
-		if (ret) {
-			FT_PRINTERR("fi_send", ret);
-			break;
-		}
+		do {
+			ret = fi_send(node->ep, node->mem, hints->ep_attr->max_msg_size,
+					node->mrdesc, 0, node);
+			if (ret && ret != -FI_EAGAIN) {
+				FT_PRINTERR("fi_send", ret);
+				break;
+			}
+		} while (ret == -FI_EAGAIN);
 	}
 	return ret;
 }
