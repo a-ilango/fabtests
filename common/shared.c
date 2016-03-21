@@ -789,16 +789,17 @@ void init_test(struct ft_opts *opts, char *test_name, size_t test_name_len)
 		opts->iterations = size_to_count(opts->transfer_size);
 }
 
-ssize_t ft_post_tx(size_t size)
+ssize_t ft_post_tx_args(struct fid_ep *ep, void *buf, size_t size, struct fid_mr *mr,
+		fi_addr_t dest_addr, void *context)
 {
 	ssize_t ret;
 
 	if (hints->caps & FI_TAGGED) {
-		ret = fi_tsend(ep, tx_buf, size + ft_tx_prefix_size(),
-				fi_mr_desc(mr), remote_fi_addr, tx_seq, &tx_ctx);
+		ret = fi_tsend(ep, buf, size + ft_tx_prefix_size(),
+				fi_mr_desc(mr), dest_addr, tx_seq, context);
 	} else {
-		ret = fi_send(ep, tx_buf, size + ft_tx_prefix_size(),
-				fi_mr_desc(mr), remote_fi_addr, &tx_ctx);
+		ret = fi_send(ep, buf, size + ft_tx_prefix_size(),
+				fi_mr_desc(mr), dest_addr, context);
 	}
 	if (ret) {
 		FT_PRINTERR("transmit", ret);
@@ -809,19 +810,30 @@ ssize_t ft_post_tx(size_t size)
 	return 0;
 }
 
-ssize_t ft_tx(size_t size)
+ssize_t ft_post_tx(size_t size)
+{
+	return ft_post_tx_args(ep, tx_buf, size, mr, remote_fi_addr, &tx_ctx);
+}
+
+ssize_t ft_tx_args(struct fid_ep *ep, void *buf, size_t size, struct fid_mr *mr,
+		fi_addr_t dest_addr, void *context)
 {
 	ssize_t ret;
 
 	if (ft_check_opts(FT_OPT_VERIFY_DATA | FT_OPT_ACTIVE))
-		ft_fill_buf((char *) tx_buf + ft_tx_prefix_size(), size);
+		ft_fill_buf((char *) buf + ft_tx_prefix_size(), size);
 
-	ret = ft_post_tx(size);
+	ret = ft_post_tx_args(ep, buf, size, mr, dest_addr, context);
 	if (ret)
 		return ret;
 
 	ret = ft_get_tx_comp(tx_seq);
 	return ret;
+}
+
+ssize_t ft_tx(size_t size)
+{
+	return ft_tx_args(ep, tx_buf, size, mr, remote_fi_addr, &tx_ctx);
 }
 
 ssize_t ft_post_inject(size_t size)
@@ -859,16 +871,17 @@ ssize_t ft_inject(size_t size)
 	return ret;
 }
 
-ssize_t ft_post_rx(size_t size)
+ssize_t ft_post_rx_args(struct fid_ep *ep, void *buf, size_t size, struct fid_mr *mr,
+		fi_addr_t src_addr, void *context)
 {
 	ssize_t ret;
 
 	if (hints->caps & FI_TAGGED) {
-		ret = fi_trecv(ep, rx_buf, size + ft_rx_prefix_size(), fi_mr_desc(mr),
-				0, rx_seq, 0, &rx_ctx);
+		ret = fi_trecv(ep, buf, size + ft_rx_prefix_size(), fi_mr_desc(mr),
+				src_addr, rx_seq, 0, context);
 	} else {
-		ret = fi_recv(ep, rx_buf, size + ft_rx_prefix_size(), fi_mr_desc(mr),
-				0, &rx_ctx);
+		ret = fi_recv(ep, buf, size + ft_rx_prefix_size(), fi_mr_desc(mr),
+				src_addr, context);
 	}
 	if (ret) {
 		FT_PRINTERR("receive", ret);
@@ -879,7 +892,13 @@ ssize_t ft_post_rx(size_t size)
 	return 0;
 }
 
-ssize_t ft_rx(size_t size)
+ssize_t ft_post_rx(size_t size)
+{
+	return ft_post_rx_args(ep, buf, size, mr, 0, &rx_ctx);
+}
+
+ssize_t ft_rx_args(struct fid_ep *ep, void *buf, size_t size, struct fid_mr *mr,
+		fi_addr_t src_addr, void *context)
 {
 	ssize_t ret;
 
@@ -888,16 +907,20 @@ ssize_t ft_rx(size_t size)
 		return ret;
 
 	if (ft_check_opts(FT_OPT_VERIFY_DATA | FT_OPT_ACTIVE)) {
-		ret = ft_check_buf((char *) rx_buf + ft_rx_prefix_size(), size);
+		ret = ft_check_buf((char *) buf + ft_rx_prefix_size(), size);
 		if (ret)
 			return ret;
 	}
 	/* TODO: verify CQ data, if available */
 
-	ret = ft_post_rx(rx_size);
+	ret = ft_post_rx_args(ep, buf, rx_size, mr, src_addr, context);
 	return ret;
 }
 
+ssize_t ft_rx(size_t size)
+{
+	return ft_rx_args(ep, rx_buf, size, mr, 0, &rx_ctx);
+}
 /*
  * fi_cq_err_entry can be cast to any CQ entry format.
  */

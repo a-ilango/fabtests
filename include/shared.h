@@ -270,6 +270,15 @@ ssize_t ft_rx(size_t size);
 ssize_t ft_tx(size_t size);
 ssize_t ft_inject(size_t size);
 
+ssize_t ft_post_rx_args(struct fid_ep *ep, void *buf, size_t size, struct fid_mr *mr,
+		fi_addr_t src_addr, void *context);
+ssize_t ft_rx_args(struct fid_ep *ep, void *buf, size_t size, struct fid_mr *mr,
+		fi_addr_t src_addr, void *context);
+ssize_t ft_post_tx_args(struct fid_ep *ep, void *buf, size_t size, struct fid_mr *mr,
+		fi_addr_t dest_addr, void *context);
+ssize_t ft_tx_args(struct fid_ep *ep, void *buf, size_t size, struct fid_mr *mr,
+		fi_addr_t dest_addr, void *context);
+
 int ft_cq_readerr(struct fid_cq *cq);
 int ft_get_rx_comp(uint64_t total);
 int ft_get_tx_comp(uint64_t total);
