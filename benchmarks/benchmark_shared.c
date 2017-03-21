@@ -132,7 +132,7 @@ int pingpong(void)
 	return 0;
 }
 
-static int bw_tx_comp()
+static int bw_tx_comp(void)
 {
 	int ret;
 
@@ -142,12 +142,13 @@ static int bw_tx_comp()
 	return ft_rx(ep, 4);
 }
 
-static int bw_rx_comp()
+static int bw_rx_comp(int num_comp)
 {
 	int ret;
 
 	/* rx_seq is always one ahead */
-	ret = ft_get_rx_comp(rx_seq - 1);
+	ret = ft_get_rx_comp(num_comp ? rx_cq_cntr + num_comp :
+			     rx_seq - 1);
 	if (ret)
 		return ret;
 	return ft_tx(ep, remote_fi_addr, 4, &tx_ctx);
@@ -201,13 +202,13 @@ int bandwidth(void)
 				return ret;
 
 			if (++j == opts.window_size) {
-				ret = bw_rx_comp();
+				ret = bw_rx_comp(opts.window_size);
 				if (ret)
 					return ret;
 				j = 0;
 			}
 		}
-		ret = bw_rx_comp();
+		ret = bw_rx_comp(0);
 		if (ret)
 			return ret;
 	}
@@ -230,7 +231,7 @@ static int bw_rma_comp(enum ft_rma_opcodes rma_op)
 		if (opts.dst_addr) {
 			ret = bw_tx_comp();
 		} else {
-			ret = bw_rx_comp();
+			ret = bw_rx_comp(0);
 		}
 	} else {
 		ret = ft_get_tx_comp(tx_seq);

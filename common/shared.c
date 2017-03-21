@@ -1303,32 +1303,37 @@ ssize_t ft_rx(struct fid_ep *ep, size_t size)
 static int ft_spin_for_comp(struct fid_cq *cq, uint64_t *cur,
 			    uint64_t total, int timeout)
 {
-	struct fi_cq_err_entry comp;
+	struct fi_cq_err_entry *comp, *comp_ptr;
 	struct timespec a, b;
 	int ret;
 
 	if (timeout >= 0)
 		clock_gettime(CLOCK_MONOTONIC, &a);
 
+	comp_ptr = comp = malloc(sizeof(*comp) * (total - *cur));
+	//FT_ERR("total: %lu, cur: %lu\n", total, *cur);
 	while (total - *cur > 0) {
-		ret = fi_cq_read(cq, &comp, 1);
+		ret = fi_cq_read(cq, comp_ptr, total - *cur);
 		if (ret > 0) {
 			if (timeout >= 0)
 				clock_gettime(CLOCK_MONOTONIC, &a);
 
-			(*cur)++;
+			comp_ptr += ret;
+			(*cur) += ret;
 		} else if (ret < 0 && ret != -FI_EAGAIN) {
-			return ret;
+			goto out;
 		} else if (timeout >= 0) {
 			clock_gettime(CLOCK_MONOTONIC, &b);
 			if ((b.tv_sec - a.tv_sec) > timeout) {
 				fprintf(stderr, "%ds timeout expired\n", timeout);
-				return -FI_ENODATA;
+				ret = -FI_ENODATA;
+				goto out;
 			}
 		}
 	}
-
-	return 0;
+out:
+	free(comp);
+	return ret < 0 ? ret : 0;
 }
 
 /*
